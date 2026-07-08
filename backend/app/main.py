@@ -12,6 +12,12 @@ from backend.app.services.vector_service import (
     VectorSearchError,
     VectorSearchSettings,
 )
+from backend.app.services.video_service import (
+    OpeningVideoWorkflow,
+    VideoSearchError,
+    VideoSearchSettings,
+    YouTubeVideoSearchService,
+)
 
 
 app = FastAPI(title="FFE Chess Openings Agent", version="0.1.0")
@@ -30,6 +36,14 @@ vector_search_service = MilvusVectorSearchService(
     uri=vector_settings.milvus_uri,
     collection_name=vector_settings.collection_name,
     limit=vector_settings.limit,
+)
+video_settings = VideoSearchSettings.from_env()
+video_workflow = OpeningVideoWorkflow(
+    YouTubeVideoSearchService(
+        api_key=video_settings.youtube_api_key,
+        max_results=video_settings.max_results,
+        relevance_language=video_settings.relevance_language,
+    )
 )
 
 
@@ -64,4 +78,12 @@ def vector_search(opening: str) -> dict:
     try:
         return vector_search_service.search(opening)
     except VectorSearchError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.get("/api/v1/videos/{opening}")
+def videos(opening: str) -> dict:
+    try:
+        return video_workflow.run(opening)
+    except VideoSearchError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc

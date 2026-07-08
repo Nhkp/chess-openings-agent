@@ -50,6 +50,14 @@ Rechercher du contexte d'ouverture :
 curl "http://localhost:8000/api/v1/vector-search?opening=sicilienne"
 ```
 
+Rechercher des videos explicatives YouTube :
+
+```bash
+curl "http://localhost:8000/api/v1/videos/Defense%20sicilienne"
+```
+
+Renseigner `YOUTUBE_API_KEY` dans `.env` avant d'appeler cet endpoint.
+
 ## Docker
 
 ```bash
