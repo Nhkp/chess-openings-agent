@@ -15,5 +15,13 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "coverage>=7.15.0",
     "milvus-lite>=3.0",
 ]
+
+[tool.coverage.run]
+source = ["backend/app", "backend/scripts"]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true

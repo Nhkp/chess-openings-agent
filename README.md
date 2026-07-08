@@ -99,6 +99,24 @@ npm start
 
 Le proxy Angular redirige `/api` vers `http://localhost:8000`.
 
+## Tests et CI
+
+Le plan de couverture est detaille dans [docs/testing-plan.md](docs/testing-plan.md).
+
+```bash
+uv run coverage run -m unittest discover -s backend/tests
+uv run coverage report
+cd frontend
+npm run test:ci
+```
+
+GitHub Actions execute les tests backend et frontend sur chaque pull request et
+sur les pushes vers `main`.
+
+## Scenario de demo
+
+Le scenario pas-a-pas est disponible dans [docs/demo-scenario.md](docs/demo-scenario.md).
+
 ## Positions de demo
 
 - Position initiale : `rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1`
