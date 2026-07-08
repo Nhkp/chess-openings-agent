@@ -1,0 +1,109 @@
+<main class="shell">
+  <section class="board-zone" aria-labelledby="board-title">
+    <div class="topbar">
+      <div>
+        <p class="eyebrow">FFE Opening Lab</p>
+        <h1 id="board-title">Agent ouvertures echecs</h1>
+      </div>
+      <div class="actions" aria-label="Actions echiquier">
+        <button type="button" (click)="analyzeCurrentPosition()" [disabled]="loadingPosition">Analyser</button>
+        <button type="button" (click)="resetBoard()">Reset</button>
+        <button type="button" (click)="reverseBoard()">Retourner</button>
+      </div>
+    </div>
+
+    <div class="board-wrap">
+      <ngx-chess-board
+        #board
+        [size]="420"
+        [showCoords]="true"
+        [showLastMove]="true"
+        [showLegalMoves]="true"
+        lightTileColor="#f4e5c7"
+        darkTileColor="#6f8d68"
+        (moveChange)="onMoveChange()"
+      ></ngx-chess-board>
+    </div>
+
+    <div class="fen-panel" aria-live="polite">
+      <span>FEN</span>
+      <code>{{ currentFen }}</code>
+    </div>
+  </section>
+
+  <aside class="agent-panel" aria-label="Recommandations agent">
+    <section class="panel-block">
+      <div class="panel-heading">
+        <h2>Position</h2>
+        <span *ngIf="loadingPosition">Analyse...</span>
+      </div>
+
+      <p class="error" *ngIf="positionError">{{ positionError }}</p>
+
+      <div class="score-grid" *ngIf="evaluation">
+        <div>
+          <span>Evaluation</span>
+          <strong *ngIf="evaluation.mate === null">{{ evaluation.centipawns }} cp</strong>
+          <strong *ngIf="evaluation.mate !== null">Mat {{ evaluation.mate }}</strong>
+        </div>
+        <div>
+          <span>Meilleur coup</span>
+          <strong>{{ evaluation.best_move || 'n/a' }}</strong>
+        </div>
+      </div>
+
+      <div class="move-list" *ngIf="moveResponse?.moves?.length; else noMoves">
+        <article *ngFor="let move of moveResponse?.moves?.slice(0, 5); trackBy: trackMove">
+          <div>
+            <strong>{{ move.san || move.uci }}</strong>
+            <span>{{ move.uci }}</span>
+          </div>
+          <span>{{ move.games | number }} parties</span>
+        </article>
+      </div>
+
+      <ng-template #noMoves>
+        <p class="muted">Aucun coup theorique charge.</p>
+      </ng-template>
+    </section>
+
+    <section class="panel-block">
+      <div class="panel-heading">
+        <h2>Ressources</h2>
+        <span *ngIf="loadingResources">Recherche...</span>
+      </div>
+
+      <form class="resource-form" (ngSubmit)="loadResources()">
+        <input
+          name="opening"
+          [(ngModel)]="openingQuery"
+          autocomplete="off"
+          aria-label="Ouverture"
+        />
+        <button type="submit" [disabled]="loadingResources">Chercher</button>
+      </form>
+
+      <p class="error" *ngIf="resourceError">{{ resourceError }}</p>
+
+      <article class="context-card" *ngFor="let result of contextResults; trackBy: trackContext">
+        <div>
+          <strong>{{ result.opening }}</strong>
+          <span>{{ result.eco }}</span>
+        </div>
+        <p>{{ result.text }}</p>
+      </article>
+    </section>
+
+    <section class="panel-block video-block">
+      <h2>Videos</h2>
+      <a class="video-card" *ngFor="let video of videos; trackBy: trackVideo" [href]="video.url" target="_blank" rel="noreferrer">
+        <img *ngIf="video.thumbnail_url" [src]="video.thumbnail_url" alt="" />
+        <div>
+          <strong>{{ video.title }}</strong>
+          <span>{{ video.channel }}</span>
+        </div>
+      </a>
+      <p class="muted" *ngIf="!videos.length">Aucune video chargee.</p>
+    </section>
+  </aside>
+</main>
