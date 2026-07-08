@@ -10,11 +10,17 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends stockfish \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY pyproject.toml uv.lock ./
 RUN uv sync --locked --no-dev
 
 COPY backend ./backend
 
 EXPOSE 8000
+
+ENV STOCKFISH_PATH=/usr/games/stockfish
 
 CMD ["uvicorn", "backend.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
