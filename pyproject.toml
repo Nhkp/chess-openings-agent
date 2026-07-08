@@ -6,6 +6,12 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.139.0",
+    "pymilvus>=3.0.0",
     "python-chess>=1.999",
     "uvicorn[standard]>=0.51.0",
+]
+
+[dependency-groups]
+dev = [
+    "milvus-lite>=3.0",
 ]

@@ -1,0 +1,44 @@
+[
+  {
+    "id": "sicilian-defense",
+    "opening": "Defense sicilienne",
+    "eco": "B20-B99",
+    "text": "La Defense sicilienne commence par 1.e4 c5. Les Noirs evitent la symetrie et cherchent un jeu asymetrique avec pression sur la colonne c. Les plans typiques opposent l'activite blanche au centre et a l'aile roi a la contre-attaque noire a l'aile dame.",
+    "source": "wikichess_seed"
+  },
+  {
+    "id": "ruy-lopez",
+    "opening": "Partie espagnole",
+    "eco": "C60-C99",
+    "text": "La Partie espagnole, ou Ruy Lopez, commence par 1.e4 e5 2.Nf3 Nc6 3.Bb5. Les Blancs mettent la pression sur le cavalier c6 et preparent souvent c3 puis d4. Les structures centrales et la paire de fous donnent de nombreux plans strategiques.",
+    "source": "wikichess_seed"
+  },
+  {
+    "id": "italian-game",
+    "opening": "Partie italienne",
+    "eco": "C50-C59",
+    "text": "La Partie italienne commence par 1.e4 e5 2.Nf3 Nc6 3.Bc4. Les Blancs visent rapidement la case f7 et developpent naturellement leurs pieces. Les plans modernes incluent c3, d3, roque rapide et expansion progressive au centre.",
+    "source": "wikichess_seed"
+  },
+  {
+    "id": "queens-gambit",
+    "opening": "Gambit dame",
+    "eco": "D06-D69",
+    "text": "Le Gambit dame commence par 1.d4 d5 2.c4. Les Blancs offrent un pion lateral pour contester le centre noir. Les Noirs peuvent accepter le pion ou maintenir d5; les themes principaux sont la pression sur d5, le developpement du fou c1 et les ruptures cxd5 ou e4.",
+    "source": "wikichess_seed"
+  },
+  {
+    "id": "french-defense",
+    "opening": "Defense francaise",
+    "eco": "C00-C19",
+    "text": "La Defense francaise commence par 1.e4 e6. Les Noirs preparent d5 et acceptent souvent une structure solide mais un fou c8 enferme. Les plans recurrents tournent autour de la chaine de pions e6-d5 contre e5-d4 et des ruptures c5 ou f6.",
+    "source": "wikichess_seed"
+  },
+  {
+    "id": "caro-kann",
+    "opening": "Defense Caro-Kann",
+    "eco": "B10-B19",
+    "text": "La Defense Caro-Kann commence par 1.e4 c6. Les Noirs preparent d5 avec une structure robuste et developpent souvent le fou c8 avant e6. Elle mene a des positions solides ou les Blancs cherchent de l'espace et les Noirs des finales saines.",
+    "source": "wikichess_seed"
+  }
+]

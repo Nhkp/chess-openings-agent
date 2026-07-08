@@ -7,6 +7,11 @@ from backend.app.services.chess_service import (
     StockfishEvaluationService,
     UpstreamServiceError,
 )
+from backend.app.services.vector_service import (
+    MilvusVectorSearchService,
+    VectorSearchError,
+    VectorSearchSettings,
+)
 
 
 app = FastAPI(title="FFE Chess Openings Agent", version="0.1.0")
@@ -19,6 +24,12 @@ opening_service = LichessOpeningService(
 evaluation_service = StockfishEvaluationService(
     stockfish_path=settings.stockfish_path,
     depth=settings.stockfish_depth,
+)
+vector_settings = VectorSearchSettings.from_env()
+vector_search_service = MilvusVectorSearchService(
+    uri=vector_settings.milvus_uri,
+    collection_name=vector_settings.collection_name,
+    limit=vector_settings.limit,
 )
 
 
@@ -44,4 +55,13 @@ def evaluate(fen: str) -> dict:
     except InvalidFenError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except UpstreamServiceError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.get("/api/v1/vector-search")
+@app.get("/vector-search")
+def vector_search(opening: str) -> dict:
+    try:
+        return vector_search_service.search(opening)
+    except VectorSearchError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc

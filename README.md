@@ -37,6 +37,19 @@ Evaluer une position avec Stockfish :
 curl "http://localhost:8000/api/v1/evaluate/rnbqkbnr%2Fpppppppp%2F8%2F8%2F8%2F8%2FPPPPPPPP%2FRNBQKBNR%20w%20KQkq%20-%200%201"
 ```
 
+Charger le jeu de donnees d'ouvertures dans Milvus :
+
+```bash
+docker compose up -d milvus
+uv run python -m backend.scripts.load_openings
+```
+
+Rechercher du contexte d'ouverture :
+
+```bash
+curl "http://localhost:8000/api/v1/vector-search?opening=sicilienne"
+```
+
 ## Docker
 
 ```bash
