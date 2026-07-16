@@ -11,9 +11,10 @@ from backend.app.services.video_service import VideoSearchError
 
 class MainRouteTest(unittest.TestCase):
     def test_healthcheck(self):
-        from backend.app.main import healthcheck
+        from backend.app import main
 
-        self.assertEqual(healthcheck(), {"status": "ok"})
+        with patch.object(main, "history_logger", Mock(health=Mock(return_value="ok"))):
+            self.assertEqual(main.healthcheck(), {"status": "ok", "mongodb": "ok"})
 
     def test_moves_maps_invalid_fen_to_422(self):
         from backend.app import main
@@ -38,7 +39,10 @@ class MainRouteTest(unittest.TestCase):
 
         fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         payload = {"fen": fen, "moves": []}
-        with patch.object(main, "opening_service", Mock(moves_for_fen=Mock(return_value=payload))) as service:
+        with (
+            patch.object(main, "opening_service", Mock(moves_for_fen=Mock(return_value=payload))) as service,
+            patch.object(main, "history_logger", Mock(log=Mock())),
+        ):
             client = TestClient(main.app)
 
             self.assertEqual(client.get("/api/v1/moves", params={"fen": fen}).json(), payload)
@@ -48,7 +52,10 @@ class MainRouteTest(unittest.TestCase):
         from backend.app import main
 
         payload = {"best_move": "e2e4"}
-        with patch.object(main, "evaluation_service", Mock(evaluate_fen=Mock(return_value=payload))):
+        with (
+            patch.object(main, "evaluation_service", Mock(evaluate_fen=Mock(return_value=payload))),
+            patch.object(main, "history_logger", Mock(log=Mock())),
+        ):
             self.assertEqual(main.evaluate("fen"), payload)
 
     def test_evaluate_route_accepts_query_fen(self):
@@ -56,7 +63,10 @@ class MainRouteTest(unittest.TestCase):
 
         fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
         payload = {"fen": fen, "best_move": "e2e4"}
-        with patch.object(main, "evaluation_service", Mock(evaluate_fen=Mock(return_value=payload))) as service:
+        with (
+            patch.object(main, "evaluation_service", Mock(evaluate_fen=Mock(return_value=payload))) as service,
+            patch.object(main, "history_logger", Mock(log=Mock())),
+        ):
             client = TestClient(main.app)
 
             self.assertEqual(client.get("/api/v1/evaluate", params={"fen": fen}).json(), payload)
@@ -75,18 +85,41 @@ class MainRouteTest(unittest.TestCase):
         from backend.app import main
 
         payload = {"videos": []}
-        with patch.object(main, "video_workflow", Mock(run=Mock(return_value=payload))):
+        with (
+            patch.object(main, "video_workflow", Mock(run=Mock(return_value=payload))),
+            patch.object(main, "history_logger", Mock(log=Mock())),
+        ):
             self.assertEqual(main.videos("sicilienne"), payload)
 
     def test_videos_route_accepts_query_and_unprefixed_path(self):
         from backend.app import main
 
         payload = {"opening": "Defense sicilienne", "videos": [], "count": 0}
-        with patch.object(main, "video_workflow", Mock(run=Mock(return_value=payload))):
+        with (
+            patch.object(main, "video_workflow", Mock(run=Mock(return_value=payload))),
+            patch.object(main, "history_logger", Mock(log=Mock())),
+        ):
             client = TestClient(main.app)
 
             self.assertEqual(client.get("/api/v1/videos", params={"opening": "Defense sicilienne"}).status_code, 200)
             self.assertEqual(client.get("/videos/Defense%20sicilienne").status_code, 200)
+
+    def test_history_returns_recent_events(self):
+        from backend.app import main
+
+        events = [{"event_type": "moves"}]
+        with patch.object(main, "history_logger", Mock(recent=Mock(return_value=events))) as logger:
+            self.assertEqual(main.history(20), {"events": events, "count": 1})
+            logger.recent.assert_called_once_with(20)
+
+    def test_history_maps_store_error(self):
+        from backend.app import main
+
+        with patch.object(main, "history_logger", Mock(recent=Mock(side_effect=main.HistoryStoreError("mongo")))):
+            with self.assertRaises(HTTPException) as raised:
+                main.history(20)
+
+        self.assertEqual(raised.exception.status_code, 503)
 
     def test_videos_maps_workflow_error(self):
         from backend.app import main

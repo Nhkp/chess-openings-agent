@@ -18,6 +18,9 @@ services:
       MILVUS_URI: ${MILVUS_URI:-http://milvus:19530}
       MILVUS_COLLECTION: ${MILVUS_COLLECTION:-opening_notes}
       VECTOR_SEARCH_LIMIT: ${VECTOR_SEARCH_LIMIT:-3}
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017}
+      MONGODB_DATABASE: ${MONGODB_DATABASE:-opening_agent}
+      MONGODB_EVENTS_COLLECTION: ${MONGODB_EVENTS_COLLECTION:-agent_events}
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
       YOUTUBE_MAX_RESULTS: ${YOUTUBE_MAX_RESULTS:-5}
       YOUTUBE_RELEVANCE_LANGUAGE: ${YOUTUBE_RELEVANCE_LANGUAGE:-fr}
@@ -26,6 +29,8 @@ services:
     depends_on:
       seed-openings:
         condition: service_completed_successfully
+      mongodb:
+        condition: service_started
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/v1/healthcheck', timeout=2)"]
       interval: 10s
@@ -41,6 +46,12 @@ services:
     depends_on:
       - milvus
     restart: "no"
+  mongodb:
+    image: mongo:8.0
+    ports:
+      - "${MONGODB_PORT:-27017}:27017"
+    volumes:
+      - mongodb-data:/data/db
   etcd:
     image: quay.io/coreos/etcd:v3.5.18
     environment:
@@ -74,6 +85,7 @@ services:
       - minio
 
 volumes:
+  mongodb-data:
   etcd-data:
   minio-data:
   milvus-data:

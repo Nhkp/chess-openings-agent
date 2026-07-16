@@ -18,6 +18,7 @@ Current focus:
 - service-level tests for FEN validation, Lichess formatting, Milvus search, and YouTube formatting
 - route-level tests for FastAPI error mapping
 - seeder tests for Milvus startup retry behavior
+- MongoDB history tests for event writes, unavailable store handling, and history route formatting
 
 Next useful backend tests:
 

@@ -1,7 +1,7 @@
 [project]
 name = "projet-13"
 version = "0.1.0"
-description = "Add your description here"
+description = "POC local d'agent IA pour l'entrainement aux ouvertures d'echecs"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
@@ -9,6 +9,7 @@ dependencies = [
     "google-api-python-client>=2.198.0",
     "langgraph>=1.2.8",
     "pymilvus>=3.0.0",
+    "pymongo>=4.17.0",
     "python-chess>=1.999",
     "uvicorn[standard]>=0.51.0",
 ]

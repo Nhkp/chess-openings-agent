@@ -7,6 +7,11 @@ from backend.app.services.chess_service import (
     StockfishEvaluationService,
     UpstreamServiceError,
 )
+from backend.app.services.history_service import (
+    HistorySettings,
+    HistoryStoreError,
+    MongoEventLogger,
+)
 from backend.app.services.vector_service import (
     MilvusVectorSearchService,
     VectorSearchError,
@@ -45,18 +50,26 @@ video_workflow = OpeningVideoWorkflow(
         relevance_language=video_settings.relevance_language,
     )
 )
+history_settings = HistorySettings.from_env()
+history_logger = MongoEventLogger(
+    uri=history_settings.mongodb_uri,
+    database_name=history_settings.database_name,
+    collection_name=history_settings.collection_name,
+)
 
 
 @app.get("/api/v1/healthcheck")
 def healthcheck() -> dict[str, str]:
-    return {"status": "ok"}
+    return {"status": "ok", "mongodb": history_logger.health()}
 
 
 @app.get("/api/v1/moves")
 @app.get("/api/v1/moves/{fen:path}")
 def moves(fen: str) -> dict:
     try:
-        return opening_service.moves_for_fen(fen)
+        result = opening_service.moves_for_fen(fen)
+        history_logger.log("moves", {"fen": result.get("fen"), "move_count": len(result.get("moves", []))})
+        return result
     except InvalidFenError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except UpstreamServiceError as exc:
@@ -67,7 +80,18 @@ def moves(fen: str) -> dict:
 @app.get("/api/v1/evaluate/{fen:path}")
 def evaluate(fen: str) -> dict:
     try:
-        return evaluation_service.evaluate_fen(fen)
+        result = evaluation_service.evaluate_fen(fen)
+        history_logger.log(
+            "evaluate",
+            {
+                "fen": result.get("fen"),
+                "depth": result.get("depth"),
+                "best_move": result.get("best_move"),
+                "centipawns": result.get("centipawns"),
+                "mate": result.get("mate"),
+            },
+        )
+        return result
     except InvalidFenError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     except UpstreamServiceError as exc:
@@ -78,7 +102,9 @@ def evaluate(fen: str) -> dict:
 @app.get("/vector-search")
 def vector_search(opening: str) -> dict:
     try:
-        return vector_search_service.search(opening)
+        result = vector_search_service.search(opening)
+        history_logger.log("vector_search", {"opening": result["query"], "result_count": len(result["results"])})
+        return result
     except VectorSearchError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
@@ -89,6 +115,17 @@ def vector_search(opening: str) -> dict:
 @app.get("/videos/{opening}")
 def videos(opening: str) -> dict:
     try:
-        return video_workflow.run(opening)
+        result = video_workflow.run(opening)
+        history_logger.log("videos", {"opening": result.get("opening"), "video_count": result.get("count", 0)})
+        return result
     except VideoSearchError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@app.get("/api/v1/history")
+def history(limit: int = 20) -> dict:
+    try:
+        events = history_logger.recent(limit)
+    except HistoryStoreError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    return {"events": events, "count": len(events)}

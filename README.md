@@ -6,6 +6,7 @@ POC local pour un agent IA d'entrainement aux ouvertures d'echecs.
 
 - `frontend` : Angular + ngx-chess-board, expose sur `http://localhost:${FRONTEND_PORT:-4200}`
 - `api` : FastAPI, expose sur `http://localhost:${API_PORT:-8000}`
+- `mongodb` : historisation des interactions de l'agent IA
 - `milvus`, `etcd`, `minio` : recherche vectorielle et stockage persistant
 - `seed-openings` : charge le petit corpus d'ouvertures dans Milvus au demarrage
 
@@ -25,6 +26,10 @@ Renseigner les secrets utiles dans `.env` :
 
 - `LICHESS_TOKEN` pour l'Opening Explorer Lichess
 - `YOUTUBE_API_KEY` pour l'API YouTube Data v3
+
+Les variables `MONGODB_URI`, `MONGODB_DATABASE` et
+`MONGODB_EVENTS_COLLECTION` pilotent l'historique agent. Les valeurs de
+`.env.example` fonctionnent avec Docker Compose.
 
 ## Demarrage Docker
 
@@ -83,6 +88,15 @@ Rechercher du contexte :
 curl "http://localhost:8000/api/v1/vector-search?opening=sicilienne"
 ```
 
+## Historique agent
+
+Les analyses de position, recherches de contexte et recherches de videos sont
+journalisees dans MongoDB. Consulter les derniers evenements :
+
+```bash
+curl "http://localhost:8000/api/v1/history?limit=20"
+```
+
 ## Videos
 
 ```bash
@@ -129,6 +143,11 @@ sur les pushes vers `main`.
 
 Le scenario pas-a-pas est disponible dans [docs/demo-scenario.md](docs/demo-scenario.md).
 
+## Note systeme
+
+La note client sur l'architecture, les benefices, les limites et la faisabilite
+economique est disponible dans [docs/system-note.md](docs/system-note.md).
+
 ## Positions de demo
 
 - Position initiale : `rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1`
@@ -138,10 +157,11 @@ Le scenario pas-a-pas est disponible dans [docs/demo-scenario.md](docs/demo-scen
 
 ## Volumes
 
-Milvus, MinIO et etcd utilisent des volumes Docker nommes :
+MongoDB, Milvus, MinIO et etcd utilisent des volumes Docker nommes :
 
 ```bash
 docker volume ls | grep projet_13
+docker volume inspect projet_13_mongodb-data
 docker volume inspect projet_13_milvus-data
 ```
 
