@@ -106,6 +106,32 @@ curl --get "http://localhost:8000/api/v1/videos" \
 
 Renseigner `YOUTUBE_API_KEY` dans `.env` avant d'appeler cet endpoint.
 
+## Postman
+
+Une collection Postman est disponible dans
+[docs/postman/Projet_13_API.postman_collection.json](docs/postman/Projet_13_API.postman_collection.json).
+Importer aussi l'environnement local
+[docs/postman/Projet_13_Local.postman_environment.json](docs/postman/Projet_13_Local.postman_environment.json).
+
+Demarrer le stack avant de lancer les requetes :
+
+```bash
+docker compose up --build
+```
+
+Dans Postman, selectionner l'environnement `Projet 13 - Local`, puis lancer les
+requetes dans cet ordre :
+
+1. `Healthcheck`
+2. `Moves by FEN`
+3. `Evaluate by FEN`
+4. `Vector search`
+5. `Videos`
+6. `History`
+
+Le dossier `Backend direct` cible `http://localhost:8000`. Le dossier
+`Via frontend proxy` cible `http://localhost:4200` pour verifier nginx.
+
 ## Frontend local
 
 ```bash

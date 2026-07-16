@@ -1,0 +1,510 @@
+{
+  "info": {
+    "_postman_id": "9fd2a2db-4817-4217-ac19-5d42ec12f84e",
+    "name": "Projet 13 - Chess Agent API",
+    "description": "Collection de smoke tests pour l'API FastAPI du projet 13. Importer aussi l'environnement `Projet 13 - Local`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Backend direct",
+      "description": "Requetes vers FastAPI expose sur localhost:8000.",
+      "item": [
+        {
+          "name": "Healthcheck",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/healthcheck",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "healthcheck"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has status', function () {",
+                  "  pm.expect(json).to.have.property('status');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Moves by FEN",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/moves?fen={{fen}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "moves"
+              ],
+              "query": [
+                {
+                  "key": "fen",
+                  "value": "{{fen}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has moves', function () {",
+                  "  pm.expect(json).to.have.property('moves');",
+                  "  pm.expect(json.moves).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Evaluate by FEN",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/evaluate?fen={{fen}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evaluate"
+              ],
+              "query": [
+                {
+                  "key": "fen",
+                  "value": "{{fen}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has evaluation fields', function () {",
+                  "  pm.expect(json).to.have.any.keys('best_move', 'centipawns');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vector search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/vector-search?opening={{opening}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vector-search"
+              ],
+              "query": [
+                {
+                  "key": "opening",
+                  "value": "{{opening}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has results', function () {",
+                  "  pm.expect(json).to.have.property('results');",
+                  "  pm.expect(json.results).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Videos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/videos?opening={{opening}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "videos"
+              ],
+              "query": [
+                {
+                  "key": "opening",
+                  "value": "{{opening}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has videos', function () {",
+                  "  pm.expect(json).to.have.property('videos');",
+                  "  pm.expect(json.videos).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/history?limit={{historyLimit}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{historyLimit}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has events', function () {",
+                  "  pm.expect(json).to.have.property('events');",
+                  "  pm.expect(json.events).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Via frontend proxy",
+      "description": "Memes smoke tests via nginx expose sur localhost:4200.",
+      "item": [
+        {
+          "name": "Healthcheck via proxy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{frontendBaseUrl}}/api/v1/healthcheck",
+              "host": [
+                "{{frontendBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "healthcheck"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has status', function () {",
+                  "  pm.expect(json).to.have.property('status');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Moves by FEN via proxy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{frontendBaseUrl}}/api/v1/moves?fen={{fen}}",
+              "host": [
+                "{{frontendBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "moves"
+              ],
+              "query": [
+                {
+                  "key": "fen",
+                  "value": "{{fen}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has moves', function () {",
+                  "  pm.expect(json).to.have.property('moves');",
+                  "  pm.expect(json.moves).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Evaluate by FEN via proxy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{frontendBaseUrl}}/api/v1/evaluate?fen={{fen}}",
+              "host": [
+                "{{frontendBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "evaluate"
+              ],
+              "query": [
+                {
+                  "key": "fen",
+                  "value": "{{fen}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has evaluation fields', function () {",
+                  "  pm.expect(json).to.have.any.keys('best_move', 'centipawns');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vector search via proxy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{frontendBaseUrl}}/api/v1/vector-search?opening={{opening}}",
+              "host": [
+                "{{frontendBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "vector-search"
+              ],
+              "query": [
+                {
+                  "key": "opening",
+                  "value": "{{opening}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has results', function () {",
+                  "  pm.expect(json).to.have.property('results');",
+                  "  pm.expect(json.results).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Videos via proxy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{frontendBaseUrl}}/api/v1/videos?opening={{opening}}",
+              "host": [
+                "{{frontendBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "videos"
+              ],
+              "query": [
+                {
+                  "key": "opening",
+                  "value": "{{opening}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has videos', function () {",
+                  "  pm.expect(json).to.have.property('videos');",
+                  "  pm.expect(json.videos).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "History via proxy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{frontendBaseUrl}}/api/v1/history?limit={{historyLimit}}",
+              "host": [
+                "{{frontendBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "{{historyLimit}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has events', function () {",
+                  "  pm.expect(json).to.have.property('events');",
+                  "  pm.expect(json.events).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

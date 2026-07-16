@@ -53,6 +53,11 @@ curl "http://localhost:8000/api/v1/history?limit=20"
 
 ## 6. API smoke checks
 
+These checks can be run with `curl` or with the Postman collection in
+`docs/postman/Projet_13_API.postman_collection.json`. Import
+`docs/postman/Projet_13_Local.postman_environment.json`, select the local
+environment, then run the `Backend direct` folder.
+
 ```bash
 curl http://localhost:8000/api/v1/healthcheck
 curl --get "http://localhost:8000/api/v1/moves" \
