@@ -67,10 +67,10 @@ export class ChessAgentService {
   constructor(private readonly http: HttpClient) {}
 
   analyzePosition(fen: string): Observable<AgentSnapshot> {
-    const encodedFen = encodeURIComponent(fen);
+    const params = new HttpParams().set('fen', fen);
     return forkJoin({
-      moves: this.http.get<MoveResponse>(`${this.apiBase}/moves/${encodedFen}`),
-      evaluation: this.http.get<EvaluationResponse>(`${this.apiBase}/evaluate/${encodedFen}`)
+      moves: this.http.get<MoveResponse>(`${this.apiBase}/moves`, { params }),
+      evaluation: this.http.get<EvaluationResponse>(`${this.apiBase}/evaluate`, { params })
     });
   }
 
@@ -80,6 +80,7 @@ export class ChessAgentService {
   }
 
   searchVideos(opening: string): Observable<VideoResponse> {
-    return this.http.get<VideoResponse>(`${this.apiBase}/videos/${encodeURIComponent(opening)}`);
+    const params = new HttpParams().set('opening', opening);
+    return this.http.get<VideoResponse>(`${this.apiBase}/videos`, { params });
   }
 }

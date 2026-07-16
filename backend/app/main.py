@@ -52,6 +52,7 @@ def healthcheck() -> dict[str, str]:
     return {"status": "ok"}
 
 
+@app.get("/api/v1/moves")
 @app.get("/api/v1/moves/{fen:path}")
 def moves(fen: str) -> dict:
     try:
@@ -62,6 +63,7 @@ def moves(fen: str) -> dict:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
+@app.get("/api/v1/evaluate")
 @app.get("/api/v1/evaluate/{fen:path}")
 def evaluate(fen: str) -> dict:
     try:
@@ -81,7 +83,10 @@ def vector_search(opening: str) -> dict:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
+@app.get("/api/v1/videos")
 @app.get("/api/v1/videos/{opening}")
+@app.get("/videos")
+@app.get("/videos/{opening}")
 def videos(opening: str) -> dict:
     try:
         return video_workflow.run(opening)

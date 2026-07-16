@@ -57,13 +57,15 @@ curl http://localhost:8000/api/v1/healthcheck
 Interroger les coups theoriques Lichess pour une FEN :
 
 ```bash
-curl "http://localhost:8000/api/v1/moves/rnbqkbnr%2Fpppppppp%2F8%2F8%2F8%2F8%2FPPPPPPPP%2FRNBQKBNR%20w%20KQkq%20-%200%201"
+curl --get "http://localhost:8000/api/v1/moves" \
+  --data-urlencode "fen=rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 ```
 
 Evaluer une position avec Stockfish :
 
 ```bash
-curl "http://localhost:8000/api/v1/evaluate/rnbqkbnr%2Fpppppppp%2F8%2F8%2F8%2F8%2FPPPPPPPP%2FRNBQKBNR%20w%20KQkq%20-%200%201"
+curl --get "http://localhost:8000/api/v1/evaluate" \
+  --data-urlencode "fen=rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 ```
 
 ## Donnees vectorielles
@@ -84,7 +86,8 @@ curl "http://localhost:8000/api/v1/vector-search?opening=sicilienne"
 ## Videos
 
 ```bash
-curl "http://localhost:8000/api/v1/videos/Defense%20sicilienne"
+curl --get "http://localhost:8000/api/v1/videos" \
+  --data-urlencode "opening=Defense sicilienne"
 ```
 
 Renseigner `YOUTUBE_API_KEY` dans `.env` avant d'appeler cet endpoint.
@@ -112,6 +115,15 @@ npm run test:ci
 
 GitHub Actions execute les tests backend et frontend sur chaque pull request et
 sur les pushes vers `main`.
+
+## Depannage
+
+- `ng: not found` pendant le build Docker : verifier que le Dockerfile frontend lance `npm ci --include=dev`.
+- `Not Found` depuis le frontend sur `/api/v1/...` : verifier que nginx preserve l'URI avec `proxy_pass http://$api_upstream$request_uri;`.
+- `YouTube search requires YOUTUBE_API_KEY` : renseigner `YOUTUBE_API_KEY` dans `.env`.
+- Erreur d'authentification Lichess : renseigner `LICHESS_TOKEN` dans `.env`.
+- `No binary for ChromeHeadless` en local : installer Chrome ou definir `CHROME_BIN`; la CI GitHub le configure automatiquement.
+- Milvus peut etre lent au premier demarrage; relancer `docker compose run --rm seed-openings` si le chargement initial echoue.
 
 ## Scenario de demo
 

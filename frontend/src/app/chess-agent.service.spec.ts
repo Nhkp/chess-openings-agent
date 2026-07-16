@@ -25,8 +25,13 @@ describe('ChessAgentService', () => {
 
     service.analyzePosition(fen).subscribe((response) => (result = response));
 
-    http.expectOne(`/api/v1/moves/${encodeURIComponent(fen)}`).flush({ fen, moves: [] });
-    http.expectOne(`/api/v1/evaluate/${encodeURIComponent(fen)}`).flush({
+    const movesRequest = http.expectOne((req) => req.url === '/api/v1/moves');
+    expect(movesRequest.request.params.get('fen')).toBe(fen);
+    movesRequest.flush({ fen, moves: [] });
+
+    const evaluationRequest = http.expectOne((req) => req.url === '/api/v1/evaluate');
+    expect(evaluationRequest.request.params.get('fen')).toBe(fen);
+    evaluationRequest.flush({
       fen,
       depth: 12,
       centipawns: 20,
@@ -51,7 +56,9 @@ describe('ChessAgentService', () => {
   it('searches videos for an opening', () => {
     service.searchVideos('Defense sicilienne').subscribe();
 
-    http.expectOne('/api/v1/videos/Defense%20sicilienne').flush({
+    const request = http.expectOne((req) => req.url === '/api/v1/videos');
+    expect(request.request.params.get('opening')).toBe('Defense sicilienne');
+    request.flush({
       opening: 'Defense sicilienne',
       videos: [],
       count: 0

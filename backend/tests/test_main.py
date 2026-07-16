@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from fastapi import HTTPException
+from fastapi.testclient import TestClient
 
 from backend.app.services.chess_service import InvalidFenError, UpstreamServiceError
 from backend.app.services.vector_service import VectorSearchError
@@ -32,12 +33,34 @@ class MainRouteTest(unittest.TestCase):
 
         self.assertEqual(raised.exception.status_code, 503)
 
+    def test_moves_route_accepts_query_fen(self):
+        from backend.app import main
+
+        fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        payload = {"fen": fen, "moves": []}
+        with patch.object(main, "opening_service", Mock(moves_for_fen=Mock(return_value=payload))) as service:
+            client = TestClient(main.app)
+
+            self.assertEqual(client.get("/api/v1/moves", params={"fen": fen}).json(), payload)
+            service.moves_for_fen.assert_called_once_with(fen)
+
     def test_evaluate_returns_service_payload(self):
         from backend.app import main
 
         payload = {"best_move": "e2e4"}
         with patch.object(main, "evaluation_service", Mock(evaluate_fen=Mock(return_value=payload))):
             self.assertEqual(main.evaluate("fen"), payload)
+
+    def test_evaluate_route_accepts_query_fen(self):
+        from backend.app import main
+
+        fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        payload = {"fen": fen, "best_move": "e2e4"}
+        with patch.object(main, "evaluation_service", Mock(evaluate_fen=Mock(return_value=payload))) as service:
+            client = TestClient(main.app)
+
+            self.assertEqual(client.get("/api/v1/evaluate", params={"fen": fen}).json(), payload)
+            service.evaluate_fen.assert_called_once_with(fen)
 
     def test_vector_search_maps_service_error(self):
         from backend.app import main
@@ -54,6 +77,16 @@ class MainRouteTest(unittest.TestCase):
         payload = {"videos": []}
         with patch.object(main, "video_workflow", Mock(run=Mock(return_value=payload))):
             self.assertEqual(main.videos("sicilienne"), payload)
+
+    def test_videos_route_accepts_query_and_unprefixed_path(self):
+        from backend.app import main
+
+        payload = {"opening": "Defense sicilienne", "videos": [], "count": 0}
+        with patch.object(main, "video_workflow", Mock(run=Mock(return_value=payload))):
+            client = TestClient(main.app)
+
+            self.assertEqual(client.get("/api/v1/videos", params={"opening": "Defense sicilienne"}).status_code, 200)
+            self.assertEqual(client.get("/videos/Defense%20sicilienne").status_code, 200)
 
     def test_videos_maps_workflow_error(self):
         from backend.app import main

@@ -3,7 +3,7 @@ FROM node:20-alpine AS build
 WORKDIR /app
 
 COPY package.json package-lock.json .npmrc ./
-RUN npm ci
+RUN npm ci --include=dev
 
 COPY angular.json tsconfig*.json ./
 COPY src ./src

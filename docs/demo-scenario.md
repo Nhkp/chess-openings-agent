@@ -29,7 +29,7 @@ docker compose run --rm seed-openings
 1. Move the white pawn from `e2` to `e4`.
 2. Move the black pawn from `c7` to `c5` if you want to demonstrate the Sicilian.
 3. Click `Analyser`.
-4. Explain that the current FEN is sent to FastAPI, then routed to Lichess and Stockfish.
+4. Explain that the current FEN is sent to FastAPI as a query parameter, then routed to Lichess and Stockfish.
 
 ## 4. Search enriched context
 
@@ -44,11 +44,24 @@ docker compose run --rm seed-openings
 
 ```bash
 curl http://localhost:8000/api/v1/healthcheck
-curl "http://localhost:8000/api/v1/evaluate/rnbqkbnr%2Fpppppppp%2F8%2F8%2F8%2F8%2FPPPPPPPP%2FRNBQKBNR%20w%20KQkq%20-%200%201"
+curl --get "http://localhost:8000/api/v1/moves" \
+  --data-urlencode "fen=rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+curl --get "http://localhost:8000/api/v1/evaluate" \
+  --data-urlencode "fen=rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 curl "http://localhost:8000/api/v1/vector-search?opening=sicilienne"
+curl --get "http://localhost:8000/api/v1/videos" \
+  --data-urlencode "opening=Defense sicilienne"
 ```
 
-## 6. Demo FEN positions
+## 6. Troubleshooting notes
+
+- If resources show `Not Found`, verify the frontend nginx proxy preserves `/api/v1/...` with `proxy_pass http://$api_upstream$request_uri;`.
+- If YouTube videos do not appear, check `YOUTUBE_API_KEY` in `.env`.
+- If Lichess returns an auth error, check `LICHESS_TOKEN` in `.env`.
+- If frontend tests fail with `No binary for ChromeHeadless`, install Chrome or define `CHROME_BIN`.
+- If Milvus starts slowly, rerun `docker compose run --rm seed-openings`.
+
+## 7. Demo FEN positions
 
 - Initial position: `rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1`
 - Sicilian after `1.e4 c5`: `rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2`
