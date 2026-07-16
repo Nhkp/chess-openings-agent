@@ -16,6 +16,7 @@ from pymilvus.exceptions import MilvusException
 VECTOR_DIMENSION = 64
 TOKEN_RE = re.compile(r"[a-zA-ZÀ-ÿ0-9]+")
 DEFAULT_DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "openings.json"
+DEFAULT_CHUNKS_PATH = Path(__file__).resolve().parents[1] / "data" / "opening_chunks.json"
 
 
 class VectorSearchError(RuntimeError):
@@ -27,6 +28,7 @@ class VectorSearchSettings:
     milvus_uri: str
     collection_name: str
     limit: int
+    embedding_model: str = "semantic-lite-multilingual-hash"
 
     @classmethod
     def from_env(cls) -> VectorSearchSettings:
@@ -34,7 +36,16 @@ class VectorSearchSettings:
             milvus_uri=os.getenv("MILVUS_URI", "http://localhost:19530"),
             collection_name=os.getenv("MILVUS_COLLECTION", "opening_notes"),
             limit=int(os.getenv("VECTOR_SEARCH_LIMIT", "3")),
+            embedding_model=os.getenv("EMBEDDING_MODEL", "semantic-lite-multilingual-hash"),
         )
+
+
+@dataclass(frozen=True)
+class EmbeddingService:
+    model_name: str = "semantic-lite-multilingual-hash"
+
+    def embed(self, text: str) -> list[float]:
+        return embed_text(text)
 
 
 def embed_text(text: str) -> list[float]:
@@ -56,15 +67,46 @@ def load_opening_rows(path: Path = DEFAULT_DATA_PATH) -> list[dict[str, Any]]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
-def prepare_opening_documents(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def load_opening_chunks(path: Path = DEFAULT_CHUNKS_PATH) -> list[dict[str, Any]]:
+    if path.exists():
+        return json.loads(path.read_text(encoding="utf-8"))
+    return chunk_opening_rows(load_opening_rows())
+
+
+def chunk_opening_rows(rows: list[dict[str, Any]], max_words: int = 45) -> list[dict[str, Any]]:
+    chunks: list[dict[str, Any]] = []
+    for row in rows:
+        words = row["text"].split()
+        for index, start in enumerate(range(0, len(words), max_words)):
+            text = " ".join(words[start : start + max_words])
+            chunks.append(
+                {
+                    "id": f"{row['id']}-{index}",
+                    "opening": row["opening"],
+                    "eco": row["eco"],
+                    "source": row["source"],
+                    "chunk_index": index,
+                    "text": text,
+                }
+            )
+    return chunks
+
+
+def prepare_opening_documents(
+    rows: list[dict[str, Any]],
+    embedding_service: EmbeddingService | None = None,
+) -> list[dict[str, Any]]:
+    embedder = embedding_service or EmbeddingService()
     return [
         {
             "id": row["id"],
-            "vector": embed_text(f"{row['opening']} {row['eco']} {row['text']}"),
+            "vector": embedder.embed(f"{row['opening']} {row['eco']} {row['text']}"),
             "opening": row["opening"],
             "eco": row["eco"],
             "text": row["text"],
             "source": row["source"],
+            "chunk_index": row.get("chunk_index", 0),
+            "embedding_model": embedder.model_name,
         }
         for row in rows
     ]
@@ -115,7 +157,7 @@ class MilvusVectorSearchService:
                 collection_name=self.collection_name,
                 data=[embed_text(query)],
                 limit=self.limit,
-                output_fields=["opening", "eco", "text", "source"],
+                output_fields=["opening", "eco", "text", "source", "chunk_index", "embedding_model"],
             )
         except MilvusException as exc:
             raise VectorSearchError("Milvus vector search unavailable") from exc
@@ -133,5 +175,7 @@ class MilvusVectorSearchService:
             "eco": entity.get("eco"),
             "text": entity.get("text"),
             "source": entity.get("source"),
+            "chunk_index": entity.get("chunk_index", 0),
+            "embedding_model": entity.get("embedding_model"),
             "score": hit.get("distance"),
         }

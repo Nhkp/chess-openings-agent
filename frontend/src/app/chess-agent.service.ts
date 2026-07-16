@@ -55,6 +55,19 @@ export interface VideoResponse {
   count: number;
 }
 
+export interface CoachResponse {
+  fen: string;
+  opening: string;
+  selected_tools: string[];
+  legal_moves: string[];
+  evaluation: EvaluationResponse | null;
+  theory_moves: TheoryMove[];
+  context: VectorSearchResult[];
+  videos: VideoResult[];
+  warnings: string[];
+  recommendation: string;
+}
+
 export interface AgentSnapshot {
   moves: MoveResponse;
   evaluation: EvaluationResponse;
@@ -82,5 +95,13 @@ export class ChessAgentService {
   searchVideos(opening: string): Observable<VideoResponse> {
     const params = new HttpParams().set('opening', opening);
     return this.http.get<VideoResponse>(`${this.apiBase}/videos`, { params });
+  }
+
+  coachPosition(fen: string, opening: string): Observable<CoachResponse> {
+    let params = new HttpParams().set('fen', fen);
+    if (opening.trim()) {
+      params = params.set('opening', opening.trim());
+    }
+    return this.http.get<CoachResponse>(`${this.apiBase}/coach`, { params });
   }
 }

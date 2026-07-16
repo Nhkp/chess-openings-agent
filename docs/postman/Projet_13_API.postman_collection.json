@@ -129,6 +129,53 @@
           ]
         },
         {
+          "name": "Coach recommendation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/coach?fen={{fen}}&opening={{opening}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "coach"
+              ],
+              "query": [
+                {
+                  "key": "fen",
+                  "value": "{{fen}}"
+                },
+                {
+                  "key": "opening",
+                  "value": "{{opening}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has agent recommendation', function () {",
+                  "  pm.expect(json).to.have.property('selected_tools');",
+                  "  pm.expect(json.selected_tools).to.be.an('array');",
+                  "  pm.expect(json).to.have.property('recommendation');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Vector search",
           "request": {
             "method": "GET",
@@ -372,6 +419,53 @@
                   "const json = pm.response.json();",
                   "pm.test('response has evaluation fields', function () {",
                   "  pm.expect(json).to.have.any.keys('best_move', 'centipawns');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Coach recommendation via proxy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{frontendBaseUrl}}/api/v1/coach?fen={{fen}}&opening={{opening}}",
+              "host": [
+                "{{frontendBaseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "coach"
+              ],
+              "query": [
+                {
+                  "key": "fen",
+                  "value": "{{fen}}"
+                },
+                {
+                  "key": "opening",
+                  "value": "{{opening}}"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('status is 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "pm.test('response has agent recommendation', function () {",
+                  "  pm.expect(json).to.have.property('selected_tools');",
+                  "  pm.expect(json.selected_tools).to.be.an('array');",
+                  "  pm.expect(json).to.have.property('recommendation');",
                   "});"
                 ]
               }

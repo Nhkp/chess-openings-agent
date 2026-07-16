@@ -156,6 +156,7 @@ code {
 .score-grid div,
 .move-list article,
 .context-card,
+.coach-card,
 .video-card {
   border: 1px solid #e3e4da;
   border-radius: 8px;
@@ -204,6 +205,39 @@ code {
   display: grid;
   gap: 8px;
   padding: 12px;
+}
+
+.coach-block button {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+.coach-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  line-height: 1.45;
+}
+
+.tool-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tool-list span {
+  padding: 4px 8px;
+  border: 1px solid #c7cabc;
+  border-radius: 999px;
+  color: #2f5d50;
+  font-size: 0.78rem;
+  font-weight: 700;
+  background: #eef3ec;
+}
+
+.warning {
+  color: #8a5a00;
+  font-size: 0.88rem;
 }
 
 .context-card + .context-card,

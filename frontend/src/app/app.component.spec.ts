@@ -13,6 +13,7 @@ describe('AppComponent', () => {
   beforeEach(async () => {
     agent = jasmine.createSpyObj<ChessAgentService>('ChessAgentService', [
       'analyzePosition',
+      'coachPosition',
       'searchOpening',
       'searchVideos'
     ]);
@@ -101,6 +102,56 @@ describe('AppComponent', () => {
     expect(component.videos.length).toBe(1);
   });
 
+  it('asks the coach for a unified recommendation', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const component = fixture.componentInstance;
+    const fen = 'coach fen';
+    component.board = { getFEN: () => fen } as any;
+    component.openingQuery = 'Defense sicilienne';
+    agent.coachPosition.and.returnValue(of({
+      fen,
+      opening: 'Defense sicilienne',
+      selected_tools: ['stockfish', 'lichess', 'milvus', 'youtube'],
+      legal_moves: ['g1f3'],
+      evaluation: { fen, depth: 12, centipawns: 20, mate: null, best_move: 'g1f3' },
+      theory_moves: [{ uci: 'g1f3', san: 'Nf3', white: 12, draws: 2, black: 8, games: 22 }],
+      context: [{ opening: 'Defense sicilienne', eco: 'B20', text: 'Developper les pieces.', source: 'test', score: 0.9 }],
+      videos: [{
+        video_id: 'abc',
+        title: 'Sicilienne',
+        description: 'Opening',
+        channel: 'Coach',
+        published_at: '2026-01-01',
+        url: 'https://youtu.be/abc',
+        embed_url: 'https://youtube.com/embed/abc',
+        thumbnail_url: null
+      }],
+      warnings: ['YouTube indisponible'],
+      recommendation: 'Jouer Nf3 et developper.'
+    }));
+
+    component.askCoach();
+
+    expect(agent.coachPosition).toHaveBeenCalledWith(fen, 'Defense sicilienne');
+    expect(component.loadingCoach).toBeFalse();
+    expect(component.coachResponse?.recommendation).toContain('Nf3');
+    expect(component.evaluation?.best_move).toBe('g1f3');
+    expect(component.contextResults.length).toBe(1);
+    expect(component.videos.length).toBe(1);
+  });
+
+  it('stores coach errors', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    const component = fixture.componentInstance;
+    component.board = { getFEN: () => 'bad fen' } as any;
+    agent.coachPosition.and.returnValue(throwError(() => ({ error: { detail: 'Invalid FEN syntax' } })));
+
+    component.askCoach();
+
+    expect(component.loadingCoach).toBeFalse();
+    expect(component.coachError).toBe('Invalid FEN syntax');
+  });
+
   it('keeps loading videos if context search fails', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const component = fixture.componentInstance;
@@ -153,6 +204,8 @@ describe('AppComponent', () => {
     expect(agent.analyzePosition).not.toHaveBeenCalled();
     expect(component.trackMove(0, { uci: 'e2e4', white: 1, draws: 0, black: 0, games: 1 })).toBe('e2e4');
     expect(component.trackContext(0, { opening: 'Defense', eco: 'B20', text: '', source: '', score: 1 })).toBe('Defense-B20');
+    expect(component.trackTool(0, 'stockfish')).toBe('stockfish');
+    expect(component.trackWarning(0)).toBe(0);
     expect(component.trackVideo(0, {
       video_id: 'abc',
       title: '',
@@ -172,6 +225,19 @@ describe('AppComponent', () => {
     board.getFEN.and.returnValue('reset fen');
     component.board = board;
     component.positionError = 'old';
+    component.coachError = 'old coach';
+    component.coachResponse = {
+      fen: 'old',
+      opening: '',
+      selected_tools: [],
+      legal_moves: [],
+      evaluation: null,
+      theory_moves: [],
+      context: [],
+      videos: [],
+      warnings: [],
+      recommendation: 'old'
+    };
     component.evaluation = { fen: 'old', depth: 1, centipawns: 0, mate: null, best_move: null };
 
     component.resetBoard();
@@ -180,5 +246,7 @@ describe('AppComponent', () => {
     expect(component.currentFen).toBe('reset fen');
     expect(component.evaluation).toBeUndefined();
     expect(component.positionError).toBe('');
+    expect(component.coachError).toBe('');
+    expect(component.coachResponse).toBeUndefined();
   });
 });

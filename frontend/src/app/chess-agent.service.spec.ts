@@ -64,4 +64,26 @@ describe('ChessAgentService', () => {
       count: 0
     });
   });
+
+  it('asks the coach for a recommendation', () => {
+    const fen = 'rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2';
+
+    service.coachPosition(fen, 'Defense sicilienne').subscribe();
+
+    const request = http.expectOne((req) => req.url === '/api/v1/coach');
+    expect(request.request.params.get('fen')).toBe(fen);
+    expect(request.request.params.get('opening')).toBe('Defense sicilienne');
+    request.flush({
+      fen,
+      opening: 'Defense sicilienne',
+      selected_tools: ['stockfish', 'lichess', 'milvus', 'youtube'],
+      legal_moves: [],
+      evaluation: null,
+      theory_moves: [],
+      context: [],
+      videos: [],
+      warnings: [],
+      recommendation: 'Developper les pieces.'
+    });
+  });
 });

@@ -7,6 +7,7 @@ from backend.app.services.chess_service import (
     StockfishEvaluationService,
     UpstreamServiceError,
 )
+from backend.app.services.coach_service import ChessCoachWorkflow
 from backend.app.services.history_service import (
     HistorySettings,
     HistoryStoreError,
@@ -56,11 +57,35 @@ history_logger = MongoEventLogger(
     database_name=history_settings.database_name,
     collection_name=history_settings.collection_name,
 )
+coach_workflow = ChessCoachWorkflow(
+    opening_service=opening_service,
+    evaluation_service=evaluation_service,
+    vector_search_service=vector_search_service,
+    video_workflow=video_workflow,
+)
 
 
 @app.get("/api/v1/healthcheck")
 def healthcheck() -> dict[str, str]:
     return {"status": "ok", "mongodb": history_logger.health()}
+
+
+@app.get("/api/v1/coach")
+def coach(fen: str, opening: str = "") -> dict:
+    try:
+        result = coach_workflow.run(fen, opening)
+    except InvalidFenError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+    history_logger.log(
+        "coach",
+        {
+            "fen": result["fen"],
+            "opening": result.get("opening"),
+            "selected_tools": result["selected_tools"],
+            "warning_count": len(result["warnings"]),
+        },
+    )
+    return result
 
 
 @app.get("/api/v1/moves")

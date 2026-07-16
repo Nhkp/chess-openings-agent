@@ -3,7 +3,9 @@ from unittest.mock import Mock, patch
 
 from backend.app.services.vector_service import (
     VECTOR_DIMENSION,
+    EmbeddingService,
     MilvusVectorSearchService,
+    chunk_opening_rows,
     embed_text,
     prepare_opening_documents,
 )
@@ -33,6 +35,25 @@ class VectorServiceTest(unittest.TestCase):
 
         self.assertEqual(documents[0]["id"], "sicilian-defense")
         self.assertEqual(len(documents[0]["vector"]), VECTOR_DIMENSION)
+        self.assertEqual(documents[0]["embedding_model"], EmbeddingService().model_name)
+
+    def test_chunk_opening_rows_adds_chunk_metadata(self):
+        chunks = chunk_opening_rows(
+            [
+                {
+                    "id": "sicilian-defense",
+                    "opening": "Defense sicilienne",
+                    "eco": "B20-B99",
+                    "text": " ".join(["plan"] * 60),
+                    "source": "wikichess_seed",
+                }
+            ],
+            max_words=30,
+        )
+
+        self.assertEqual(len(chunks), 2)
+        self.assertEqual(chunks[1]["id"], "sicilian-defense-1")
+        self.assertEqual(chunks[1]["chunk_index"], 1)
 
     def test_vector_search_formats_milvus_hits(self):
         client = Mock()

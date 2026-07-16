@@ -9,7 +9,7 @@ evaluation moteur, contexte pedagogique et videos.
 
 Le systeme repond aux livrables techniques avec :
 
-- LangGraph pour le workflow de recherche video.
+- LangGraph pour le workflow central de recommandation agent et le sous-workflow video.
 - FastAPI pour l'API applicative.
 - Milvus pour la recherche vectorielle sur le corpus d'ouvertures.
 - MongoDB pour l'historisation des interactions agent.
@@ -23,14 +23,18 @@ flowchart LR
     B --> F[Angular + nginx]
     F -->|/api/v1/*| A[FastAPI]
 
-    A --> L[Lichess Opening Explorer]
-    A --> S[Stockfish local]
-    A --> M[Milvus]
-    A --> G[LangGraph workflow videos]
-    G --> Y[YouTube Data API]
+    A --> C[LangGraph coach workflow]
+    C --> L[Lichess Opening Explorer]
+    C --> S[Stockfish local]
+    C --> M[Milvus]
+    C --> V[LangGraph video workflow]
+    V --> Y[YouTube Data API]
     A --> DB[(MongoDB)]
 
-    Seed[seed-openings] --> M
+    Sources[Wiki sources JSON] --> Prep[preprocess_wikichess]
+    Prep --> Chunks[opening_chunks.json]
+    Chunks --> Seed[seed-openings]
+    Seed --> M
     M --> MinIO[(MinIO)]
     M --> Etcd[(etcd)]
 ```
@@ -38,28 +42,51 @@ flowchart LR
 ### Role des composants
 
 - **Angular/nginx** : interface utilisateur et proxy `/api/v1` vers FastAPI.
-- **FastAPI** : expose les endpoints d'analyse, de recherche et d'historique.
-- **LangGraph** : encapsule le workflow de recherche video.
-- **Milvus** : indexe le corpus d'ouvertures et retourne les notes proches de la recherche.
-- **MongoDB** : stocke les evenements agent (`moves`, `evaluate`, `vector_search`, `videos`).
+- **FastAPI** : expose les endpoints d'analyse, de recherche, de coaching et d'historique.
+- **LangGraph** : orchestre le coach central (`/api/v1/coach`) et encapsule aussi le workflow de recherche video.
+- **Milvus** : indexe les chunks du corpus d'ouvertures et retourne les notes proches de la recherche.
+- **MongoDB** : stocke les evenements agent (`coach`, `moves`, `evaluate`, `vector_search`, `videos`).
 - **Stockfish** : evalue localement la position FEN.
 - **Lichess** : fournit les coups theoriques d'ouverture.
 - **YouTube Data API** : fournit les videos pedagogiques associees a une ouverture.
+
+### Workflow agent
+
+L'endpoint `/api/v1/coach` recoit une FEN et une ouverture optionnelle. Le
+graph LangGraph valide la position, extrait les coups legaux, selectionne les
+outils, appelle Lichess, Stockfish, Milvus et YouTube quand les donnees sont
+disponibles, puis produit une recommandation pedagogique en francais.
+
+Le choix d'outils est explicite dans la reponse `selected_tools`. En cas
+d'erreur Lichess, Milvus ou YouTube, le workflow conserve les resultats deja
+obtenus et expose les problemes dans `warnings`.
+
+### Donnees et embeddings
+
+Les sources d'ouvertures sont stockees dans `backend/app/data/wiki_sources/`.
+Le script `backend/scripts/preprocess_wikichess.py` nettoie ces sources, les
+decoupe en chunks courts et genere `backend/app/data/opening_chunks.json` avec
+les metadonnees `id`, `opening`, `eco`, `source`, `chunk_index` et `text`.
+
+Le chargement Milvus utilise `EmbeddingService` pour vectoriser chaque chunk et
+stocker le nom du modele dans `embedding_model`. Le POC utilise par defaut
+`semantic-lite-multilingual-hash`, un embedding lexical multilingue leger et
+deterministe, afin de garder Docker rapide et les tests reproductibles.
 
 ## Benefices
 
 - **Execution locale simple** : `docker compose up --build` demarre l'ensemble du POC.
 - **Separation claire des responsabilites** : UI, API, vecteurs, historique et workflows sont decouples.
-- **Recherche pedagogique enrichie** : Milvus retrouve rapidement les notes d'ouverture pertinentes.
+- **Recherche pedagogique enrichie** : Milvus retrouve rapidement les chunks d'ouverture pertinents.
 - **Tracabilite** : MongoDB conserve les actions recentes pour audit, demo et diagnostic.
-- **Extensibilite agent** : LangGraph peut accueillir plus d'etapes, par exemple classement, synthese ou personnalisation.
+- **Extensibilite agent** : LangGraph centralise le choix d'outils et peut accueillir plus d'etapes, par exemple LLM externe, personnalisation ou classement.
 - **Cout POC faible** : la majorite des composants sont auto-heberges localement et open source.
 
 ## Limites
 
 - **Dependances externes** : Lichess et YouTube peuvent imposer auth, quotas ou indisponibilite.
 - **Corpus limite** : le corpus Milvus embarque est volontairement petit pour la demo.
-- **Embeddings simples** : l'indexation utilise des embeddings lexicaux haches, suffisants pour le POC mais moins riches qu'un modele semantique.
+- **Embeddings simples** : l'indexation utilise un modele lexical hache, suffisant pour le POC mais moins riche qu'un modele transformer semantique.
 - **Pas d'auth utilisateur** : l'historique MongoDB est global, pas rattache a un compte.
 - **Non dimensionne production** : Docker Compose convient a la demo locale, pas a une haute disponibilite.
 - **Observabilite minimale** : logs applicatifs et historique existent, mais pas encore de traces distribuees ni dashboards.
@@ -119,7 +146,7 @@ Pour le rendu client, conserver Docker Compose comme support de demonstration et
 presenter MongoDB via l'endpoint `/api/v1/history?limit=20`. Pour une suite
 projet, prioriser :
 
-1. Remplacer les embeddings haches par un modele semantique.
+1. Remplacer `semantic-lite-multilingual-hash` par un modele transformer local, par exemple `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, si la machine cible accepte le cout CPU/RAM.
 2. Ajouter une authentification utilisateur.
 3. Isoler les historiques par utilisateur.
 4. Ajouter monitoring et alerting.

@@ -5,6 +5,7 @@ import { NgxChessBoardModule, NgxChessBoardView } from 'ngx-chess-board';
 import {
   AgentSnapshot,
   ChessAgentService,
+  CoachResponse,
   EvaluationResponse,
   MoveResponse,
   TheoryMove,
@@ -26,10 +27,13 @@ export class AppComponent {
   currentFen = 'Position initiale';
   loadingPosition = false;
   loadingResources = false;
+  loadingCoach = false;
   positionError = '';
   resourceError = '';
+  coachError = '';
   moveResponse?: MoveResponse;
   evaluation?: EvaluationResponse;
+  coachResponse?: CoachResponse;
   contextResults: VectorSearchResult[] = [];
   videos: VideoResult[] = [];
 
@@ -83,12 +87,43 @@ export class AppComponent {
     });
   }
 
+  askCoach(): void {
+    const fen = this.readFen();
+    if (!fen) {
+      return;
+    }
+
+    this.loadingCoach = true;
+    this.coachError = '';
+    this.agent.coachPosition(fen, this.openingQuery).subscribe({
+      next: (response) => {
+        this.coachResponse = response;
+        this.moveResponse = { fen: response.fen, moves: response.theory_moves };
+        if (response.evaluation) {
+          this.evaluation = response.evaluation;
+          this.currentFen = response.evaluation.fen;
+        } else {
+          this.currentFen = response.fen;
+        }
+        this.contextResults = response.context;
+        this.videos = response.videos;
+        this.loadingCoach = false;
+      },
+      error: (error) => {
+        this.coachError = error?.error?.detail ?? 'Conseil agent indisponible';
+        this.loadingCoach = false;
+      }
+    });
+  }
+
   resetBoard(): void {
     this.board?.reset();
     this.refreshFen();
     this.moveResponse = undefined;
     this.evaluation = undefined;
     this.positionError = '';
+    this.coachError = '';
+    this.coachResponse = undefined;
   }
 
   reverseBoard(): void {
@@ -105,6 +140,14 @@ export class AppComponent {
 
   trackVideo(_: number, video: VideoResult): string {
     return video.video_id;
+  }
+
+  trackTool(_: number, tool: string): string {
+    return tool;
+  }
+
+  trackWarning(index: number): number {
+    return index;
   }
 
   private loadVideos(opening: string): void {

@@ -31,7 +31,24 @@ docker compose run --rm seed-openings
 3. Click `Analyser`.
 4. Explain that the current FEN is sent to FastAPI as a query parameter, then routed to Lichess and Stockfish.
 
-## 4. Search enriched context
+## 4. Ask the LangGraph coach
+
+1. Keep the Sicilian position after `1.e4 c5`.
+2. Enter `Defense sicilienne` in the resources field.
+3. Click `Demander conseil`.
+4. Expected result:
+   - The agent shows the selected tools: Stockfish, Lichess, Milvus and YouTube.
+   - A French recommendation appears.
+   - Partial warnings appear if Lichess or YouTube is unavailable.
+   - The same response updates the existing evaluation, theory, resources and videos blocks.
+
+```bash
+curl --get "http://localhost:8000/api/v1/coach" \
+  --data-urlencode "fen=rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2" \
+  --data-urlencode "opening=Defense sicilienne"
+```
+
+## 5. Search enriched context
 
 1. In the resources field, enter `Defense sicilienne`.
 2. Click `Chercher`.
@@ -40,18 +57,18 @@ docker compose run --rm seed-openings
    - YouTube videos appear if `YOUTUBE_API_KEY` is configured.
    - Without a YouTube key, the UI shows the backend configuration error.
 
-## 5. Show MongoDB history
+## 6. Show MongoDB history
 
 1. After the position analysis and resource search, call the history endpoint.
 2. Expected result:
-   - MongoDB returns recent `moves`, `evaluate`, `vector_search`, or `videos` events.
+   - MongoDB returns recent `coach`, `moves`, `evaluate`, `vector_search`, or `videos` events.
    - If MongoDB is unavailable, core analysis still works but history returns a backend configuration error.
 
 ```bash
 curl "http://localhost:8000/api/v1/history?limit=20"
 ```
 
-## 6. API smoke checks
+## 7. API smoke checks
 
 These checks can be run with `curl` or with the Postman collection in
 `docs/postman/Projet_13_API.postman_collection.json`. Import
@@ -64,13 +81,16 @@ curl --get "http://localhost:8000/api/v1/moves" \
   --data-urlencode "fen=rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 curl --get "http://localhost:8000/api/v1/evaluate" \
   --data-urlencode "fen=rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+curl --get "http://localhost:8000/api/v1/coach" \
+  --data-urlencode "fen=rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2" \
+  --data-urlencode "opening=Defense sicilienne"
 curl "http://localhost:8000/api/v1/vector-search?opening=sicilienne"
 curl --get "http://localhost:8000/api/v1/videos" \
   --data-urlencode "opening=Defense sicilienne"
 curl "http://localhost:8000/api/v1/history?limit=20"
 ```
 
-## 7. Troubleshooting notes
+## 8. Troubleshooting notes
 
 - If resources show `Not Found`, verify the frontend nginx proxy preserves `/api/v1/...` with `proxy_pass http://$api_upstream$request_uri;`.
 - If YouTube videos do not appear, check `YOUTUBE_API_KEY` in `.env`.
@@ -79,7 +99,7 @@ curl "http://localhost:8000/api/v1/history?limit=20"
 - If frontend tests fail with `No binary for ChromeHeadless`, install Chrome or define `CHROME_BIN`.
 - If Milvus starts slowly, rerun `docker compose run --rm seed-openings`.
 
-## 8. Demo FEN positions
+## 9. Demo FEN positions
 
 - Initial position: `rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1`
 - Sicilian after `1.e4 c5`: `rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2`

@@ -32,6 +32,26 @@
   </section>
 
   <aside class="agent-panel" aria-label="Recommandations agent">
+    <section class="panel-block coach-block">
+      <div class="panel-heading">
+        <h2>Conseil de l'agent</h2>
+        <span *ngIf="loadingCoach">Analyse agent...</span>
+      </div>
+
+      <button type="button" (click)="askCoach()" [disabled]="loadingCoach">Demander conseil</button>
+
+      <p class="error" *ngIf="coachError">{{ coachError }}</p>
+
+      <article class="coach-card" *ngIf="coachResponse">
+        <p>{{ coachResponse.recommendation }}</p>
+        <div class="tool-list">
+          <span *ngFor="let tool of coachResponse.selected_tools; trackBy: trackTool">{{ tool }}</span>
+        </div>
+        <p class="muted" *ngIf="coachResponse.opening">Ouverture: {{ coachResponse.opening }}</p>
+        <p class="warning" *ngFor="let warning of coachResponse.warnings; trackBy: trackWarning">{{ warning }}</p>
+      </article>
+    </section>
+
     <section class="panel-block">
       <div class="panel-heading">
         <h2>Position</h2>

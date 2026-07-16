@@ -31,6 +31,9 @@ Les variables `MONGODB_URI`, `MONGODB_DATABASE` et
 `MONGODB_EVENTS_COLLECTION` pilotent l'historique agent. Les valeurs de
 `.env.example` fonctionnent avec Docker Compose.
 
+`EMBEDDING_MODEL` identifie le modele d'embedding utilise pour indexer les
+chunks d'ouvertures dans Milvus. La valeur par defaut reste legere pour le POC.
+
 ## Demarrage Docker
 
 ```bash
@@ -73,7 +76,21 @@ curl --get "http://localhost:8000/api/v1/evaluate" \
   --data-urlencode "fen=rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 ```
 
+Demander une recommandation unifiee a l'agent LangGraph :
+
+```bash
+curl --get "http://localhost:8000/api/v1/coach" \
+  --data-urlencode "fen=rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2" \
+  --data-urlencode "opening=Defense sicilienne"
+```
+
 ## Donnees vectorielles
+
+Preprocesser les sources Wikichess et generer les chunks :
+
+```bash
+uv run python -m backend.scripts.preprocess_wikichess
+```
 
 Charger ou recharger le jeu de donnees d'ouvertures :
 
@@ -125,9 +142,10 @@ requetes dans cet ordre :
 1. `Healthcheck`
 2. `Moves by FEN`
 3. `Evaluate by FEN`
-4. `Vector search`
-5. `Videos`
-6. `History`
+4. `Coach recommendation`
+5. `Vector search`
+6. `Videos`
+7. `History`
 
 Le dossier `Backend direct` cible `http://localhost:8000`. Le dossier
 `Via frontend proxy` cible `http://localhost:4200` pour verifier nginx.
@@ -173,6 +191,9 @@ Le scenario pas-a-pas est disponible dans [docs/demo-scenario.md](docs/demo-scen
 
 La note client sur l'architecture, les benefices, les limites et la faisabilite
 economique est disponible dans [docs/system-note.md](docs/system-note.md).
+
+Le statut case par case de la fiche d'autoevaluation est disponible dans
+[docs/autoevaluation-status.md](docs/autoevaluation-status.md).
 
 ## Positions de demo
 

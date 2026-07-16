@@ -25,6 +25,34 @@ class MainRouteTest(unittest.TestCase):
 
         self.assertEqual(raised.exception.status_code, 422)
 
+    def test_coach_returns_workflow_payload_and_logs_history(self):
+        from backend.app import main
+
+        payload = {
+            "fen": "fen",
+            "opening": "Defense sicilienne",
+            "selected_tools": ["stockfish", "lichess", "milvus", "youtube"],
+            "warnings": [],
+            "recommendation": "Jouez e4.",
+        }
+        with (
+            patch.object(main, "coach_workflow", Mock(run=Mock(return_value=payload))) as workflow,
+            patch.object(main, "history_logger", Mock(log=Mock())) as logger,
+        ):
+            self.assertEqual(main.coach("fen", "Defense sicilienne"), payload)
+
+        workflow.run.assert_called_once_with("fen", "Defense sicilienne")
+        logger.log.assert_called_once()
+
+    def test_coach_maps_invalid_fen_to_422(self):
+        from backend.app import main
+
+        with patch.object(main, "coach_workflow", Mock(run=Mock(side_effect=InvalidFenError("bad fen")))):
+            with self.assertRaises(HTTPException) as raised:
+                main.coach("bad")
+
+        self.assertEqual(raised.exception.status_code, 422)
+
     def test_moves_maps_upstream_error_to_503(self):
         from backend.app import main
 
@@ -137,7 +165,7 @@ class SeederTest(unittest.TestCase):
 
         with (
             patch.object(load_openings.VectorSearchSettings, "from_env", return_value=Mock(milvus_uri="uri", collection_name="notes")),
-            patch.object(load_openings, "load_opening_rows", return_value=[]),
+            patch.object(load_openings, "load_opening_chunks", return_value=[]),
             patch.object(load_openings, "prepare_opening_documents", return_value=[{"id": "one"}]),
             patch.object(load_openings, "build_client", return_value=Mock()),
             patch.object(load_openings, "recreate_collection", side_effect=[RuntimeError("wait"), 1]) as recreate,
@@ -148,7 +176,7 @@ class SeederTest(unittest.TestCase):
 
         self.assertEqual(recreate.call_count, 2)
         sleep.assert_called_once_with(2)
-        print_.assert_called_once_with("Loaded 1 opening notes into notes")
+        print_.assert_called_once_with("Loaded 1 opening chunks into notes")
 
 
 if __name__ == "__main__":
