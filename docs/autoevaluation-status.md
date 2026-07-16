@@ -37,6 +37,11 @@ liste les preuves presentes dans le depot.
 | Alternatives et roadmap identifiees | Implemente | recommandations dans `docs/system-note.md` |
 | Capacite de presenter et demontrer les livrables | Implemente | `docs/demo-scenario.md`, collection Postman |
 
+Le step 7, dedie au systeme avance d'analyse video sans implementation, est
+documente separement dans `docs/video-analysis-system-note.md`: architecture
+MCP, pipeline OpenCV/modele vision, faisabilite, couts build/opex, risques,
+alternatives et roadmap.
+
 Point de vigilance pour la soutenance: l'embedding par defaut est volontairement
 leger pour garder le POC local rapide. La roadmap documente le remplacement par
 un modele transformer multilingue si la qualite semantique devient prioritaire.

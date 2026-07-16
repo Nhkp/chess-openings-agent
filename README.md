@@ -192,6 +192,9 @@ Le scenario pas-a-pas est disponible dans [docs/demo-scenario.md](docs/demo-scen
 La note client sur l'architecture, les benefices, les limites et la faisabilite
 economique est disponible dans [docs/system-note.md](docs/system-note.md).
 
+La note de conception du systeme avance d'analyse video demande au step 7 est
+disponible dans [docs/video-analysis-system-note.md](docs/video-analysis-system-note.md).
+
 Le statut case par case de la fiche d'autoevaluation est disponible dans
 [docs/autoevaluation-status.md](docs/autoevaluation-status.md).
 
