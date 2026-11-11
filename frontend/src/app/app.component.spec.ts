@@ -152,6 +152,42 @@ describe('AppComponent', () => {
     expect(component.coachError).toBe('Invalid FEN syntax');
   });
 
+  it('keeps coach advice when the evaluation is unavailable', () => {
+    const component = TestBed.createComponent(AppComponent).componentInstance;
+    component.board = { getFEN: () => 'coach fen' } as any;
+    agent.coachPosition.and.returnValue(of({
+      fen: 'normalized fen', opening: '', selected_tools: [], legal_moves: [],
+      evaluation: null, theory_moves: [], context: [], videos: [],
+      warnings: ['Stockfish indisponible'], recommendation: 'Developper les pieces.'
+    }));
+
+    component.askCoach();
+
+    expect(component.currentFen).toBe('normalized fen');
+    expect(component.coachResponse?.recommendation).toBe('Developper les pieces.');
+    expect(component.loadingCoach).toBeFalse();
+  });
+
+  it('uses fallback messages for network errors and preserves the first resource error', () => {
+    const component = TestBed.createComponent(AppComponent).componentInstance;
+    component.board = { getFEN: () => 'fen' } as any;
+    agent.analyzePosition.and.returnValue(throwError(() => new Error('Network error')));
+    agent.coachPosition.and.returnValue(throwError(() => new Error('Network error')));
+    agent.searchOpening.and.returnValue(throwError(() => new Error('Network error')));
+    agent.searchVideos.and.returnValue(throwError(() => ({ error: { detail: 'YouTube unavailable' } })));
+
+    component.analyzeCurrentPosition();
+    component.askCoach();
+    component.loadResources();
+
+    expect(component.positionError).toBe('Analyse indisponible');
+    expect(component.coachError).toBe('Conseil agent indisponible');
+    expect(component.resourceError).toBe('Contexte indisponible');
+    expect(component.loadingPosition).toBeFalse();
+    expect(component.loadingCoach).toBeFalse();
+    expect(component.loadingResources).toBeFalse();
+  });
+
   it('keeps loading videos if context search fails', () => {
     const fixture = TestBed.createComponent(AppComponent);
     const component = fixture.componentInstance;
@@ -185,9 +221,11 @@ describe('AppComponent', () => {
     component.openingQuery = '   ';
 
     component.analyzeCurrentPosition();
+    component.askCoach();
     component.loadResources();
 
     expect(agent.analyzePosition).not.toHaveBeenCalled();
+    expect(agent.coachPosition).not.toHaveBeenCalled();
     expect(agent.searchOpening).not.toHaveBeenCalled();
   });
 
