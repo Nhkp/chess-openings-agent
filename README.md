@@ -42,6 +42,10 @@ docker compose up --build
 
 Ouvrir ensuite `http://localhost:4200`.
 
+Le service MinIO utilise `pgsty/minio:RELEASE.2026-08-04T00-00-00Z`, un
+[fork communautaire](https://github.com/pgsty/silo/tree/minio) avec une version
+fixe : l'ancienne image `minio/minio` n'est plus accessible sur Docker Hub.
+
 Le premier demarrage peut etre long car l'image Milvus est volumineuse. Si le
 chargement du corpus echoue parce que Milvus n'est pas encore pret, relancer :
 
