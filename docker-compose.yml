@@ -16,15 +16,18 @@ services:
       STOCKFISH_PATH: ${STOCKFISH_PATH:-/usr/games/stockfish}
       STOCKFISH_DEPTH: ${STOCKFISH_DEPTH:-12}
       MILVUS_URI: ${MILVUS_URI:-http://milvus:19530}
-      MILVUS_COLLECTION: ${MILVUS_COLLECTION:-opening_notes}
+      MILVUS_COLLECTION: ${MILVUS_COLLECTION:-opening_notes_e5}
       VECTOR_SEARCH_LIMIT: ${VECTOR_SEARCH_LIMIT:-3}
-      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-semantic-lite-multilingual-hash}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-intfloat/multilingual-e5-small}
+      HF_HOME: /models
       MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017}
       MONGODB_DATABASE: ${MONGODB_DATABASE:-opening_agent}
       MONGODB_EVENTS_COLLECTION: ${MONGODB_EVENTS_COLLECTION:-agent_events}
       YOUTUBE_API_KEY: ${YOUTUBE_API_KEY:-}
       YOUTUBE_MAX_RESULTS: ${YOUTUBE_MAX_RESULTS:-5}
       YOUTUBE_RELEVANCE_LANGUAGE: ${YOUTUBE_RELEVANCE_LANGUAGE:-fr}
+    volumes:
+      - embedding-models:/models
     ports:
       - "${API_PORT:-8000}:8000"
     depends_on:
@@ -42,11 +45,14 @@ services:
     command: ["python", "-m", "backend.scripts.load_openings"]
     environment:
       MILVUS_URI: ${MILVUS_URI:-http://milvus:19530}
-      MILVUS_COLLECTION: ${MILVUS_COLLECTION:-opening_notes}
+      MILVUS_COLLECTION: ${MILVUS_COLLECTION:-opening_notes_e5}
       VECTOR_SEARCH_LIMIT: ${VECTOR_SEARCH_LIMIT:-3}
-      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-semantic-lite-multilingual-hash}
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL:-intfloat/multilingual-e5-small}
+      HF_HOME: /models
     depends_on:
       - milvus
+    volumes:
+      - embedding-models:/models
     restart: "no"
   mongodb:
     image: mongo:8.0
@@ -87,6 +93,7 @@ services:
       - minio
 
 volumes:
+  embedding-models:
   mongodb-data:
   etcd-data:
   minio-data:

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 import os
-import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from functools import cached_property
 from pathlib import Path
 from typing import Any
 
@@ -13,8 +12,8 @@ from pymilvus import MilvusClient
 from pymilvus.exceptions import MilvusException
 
 
-VECTOR_DIMENSION = 64
-TOKEN_RE = re.compile(r"[a-zA-ZÀ-ÿ0-9]+")
+VECTOR_DIMENSION = 384
+EMBEDDING_MODEL = "intfloat/multilingual-e5-small"
 DEFAULT_DATA_PATH = Path(__file__).resolve().parents[1] / "data" / "openings.json"
 DEFAULT_CHUNKS_PATH = Path(__file__).resolve().parents[1] / "data" / "opening_chunks.json"
 
@@ -28,39 +27,60 @@ class VectorSearchSettings:
     milvus_uri: str
     collection_name: str
     limit: int
-    embedding_model: str = "semantic-lite-multilingual-hash"
+    embedding_model: str = EMBEDDING_MODEL
 
     @classmethod
     def from_env(cls) -> VectorSearchSettings:
         return cls(
             milvus_uri=os.getenv("MILVUS_URI", "http://localhost:19530"),
-            collection_name=os.getenv("MILVUS_COLLECTION", "opening_notes"),
+            collection_name=os.getenv("MILVUS_COLLECTION", "opening_notes_e5"),
             limit=int(os.getenv("VECTOR_SEARCH_LIMIT", "3")),
-            embedding_model=os.getenv("EMBEDDING_MODEL", "semantic-lite-multilingual-hash"),
+            embedding_model=os.getenv("EMBEDDING_MODEL", EMBEDDING_MODEL),
         )
 
 
 @dataclass(frozen=True)
 class EmbeddingService:
-    model_name: str = "semantic-lite-multilingual-hash"
+    model_name: str = EMBEDDING_MODEL
 
-    def embed(self, text: str) -> list[float]:
-        return embed_text(text)
+    def __post_init__(self) -> None:
+        if self.model_name != EMBEDDING_MODEL:
+            raise VectorSearchError(f"Unsupported EMBEDDING_MODEL: use {EMBEDDING_MODEL}")
+
+    @cached_property
+    def model(self) -> Any:
+        from sentence_transformers import SentenceTransformer
+
+        return SentenceTransformer(self.model_name, device="cpu")
+
+    def embed_query(self, text: str) -> list[float]:
+        return self._encode([f"query: {text}"])[0]
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self._encode([f"passage: {text}" for text in texts])
+
+    def _encode(self, texts: list[str]) -> list[list[float]]:
+        if not texts:
+            return []
+        try:
+            vectors = self.model.encode(
+                texts, batch_size=32, normalize_embeddings=True, show_progress_bar=False,
+                convert_to_numpy=True,
+            ).tolist()
+            if len(vectors) != len(texts):
+                raise ValueError("Unexpected embedding count")
+            for vector in vectors:
+                validate_vector(vector)
+            return vectors
+        except Exception as exc:
+            raise VectorSearchError("Local embedding model unavailable or invalid output") from exc
 
 
-def embed_text(text: str) -> list[float]:
-    # ponytail: hashed lexical embeddings keep the POC light; replace this with
-    # sentence-transformers when semantic quality matters more than image size.
-    vector = [0.0] * VECTOR_DIMENSION
-    for token in TOKEN_RE.findall(text.lower()):
-        digest = hashlib.blake2b(token.encode(), digest_size=4).digest()
-        index = int.from_bytes(digest, "big") % VECTOR_DIMENSION
-        vector[index] += 1.0
-
-    norm = math.sqrt(sum(value * value for value in vector))
-    if not norm:
-        return vector
-    return [value / norm for value in vector]
+def validate_vector(vector: list[float]) -> None:
+    if len(vector) != VECTOR_DIMENSION or not all(math.isfinite(value) for value in vector):
+        raise ValueError("Expected a finite 384-dimensional embedding")
+    if not any(vector):
+        raise ValueError("Embedding must be nonzero")
 
 
 def load_opening_rows(path: Path = DEFAULT_DATA_PATH) -> list[dict[str, Any]]:
@@ -97,10 +117,11 @@ def prepare_opening_documents(
     embedding_service: EmbeddingService | None = None,
 ) -> list[dict[str, Any]]:
     embedder = embedding_service or EmbeddingService()
+    vectors = embedder.embed_documents([f"{row['opening']} {row['eco']} {row['text']}" for row in rows])
     return [
         {
             "id": row["id"],
-            "vector": embedder.embed(f"{row['opening']} {row['eco']} {row['text']}"),
+            "vector": vector,
             "opening": row["opening"],
             "eco": row["eco"],
             "text": row["text"],
@@ -108,7 +129,7 @@ def prepare_opening_documents(
             "chunk_index": row.get("chunk_index", 0),
             "embedding_model": embedder.model_name,
         }
-        for row in rows
+        for row, vector in zip(rows, vectors, strict=True)
     ]
 
 
@@ -121,6 +142,10 @@ def recreate_collection(
     collection_name: str,
     documents: list[dict[str, Any]],
 ) -> int:
+    if not documents:
+        raise VectorSearchError("Cannot recreate collection with an empty corpus")
+    for document in documents:
+        validate_vector(document["vector"])
     if client.has_collection(collection_name):
         client.drop_collection(collection_name)
 
@@ -143,6 +168,7 @@ class MilvusVectorSearchService:
     uri: str
     collection_name: str
     limit: int
+    embedding_service: EmbeddingService = field(default_factory=EmbeddingService)
 
     def search(self, opening: str) -> dict[str, Any]:
         query = opening.strip()
@@ -155,7 +181,7 @@ class MilvusVectorSearchService:
                 raise VectorSearchError("Milvus opening collection is not loaded")
             results = client.search(
                 collection_name=self.collection_name,
-                data=[embed_text(query)],
+                data=[self.embedding_service.embed_query(query)],
                 limit=self.limit,
                 output_fields=["opening", "eco", "text", "source", "chunk_index", "embedding_model"],
             )

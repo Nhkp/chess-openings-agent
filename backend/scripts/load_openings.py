@@ -2,6 +2,7 @@ import time
 
 from backend.app.services.vector_service import (
     EmbeddingService,
+    VectorSearchError,
     VectorSearchSettings,
     build_client,
     load_opening_chunks,
@@ -16,6 +17,8 @@ def main() -> None:
         load_opening_chunks(),
         EmbeddingService(settings.embedding_model),
     )
+    if not documents:
+        raise VectorSearchError("Cannot seed an empty opening corpus")
 
     last_error: Exception | None = None
     for _ in range(30):

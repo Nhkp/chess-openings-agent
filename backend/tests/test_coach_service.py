@@ -5,6 +5,7 @@ import chess
 
 from backend.app.services.chess_service import UpstreamServiceError
 from backend.app.services.coach_service import ChessCoachWorkflow
+from backend.app.services.vector_service import VectorSearchError
 from backend.app.services.video_service import VideoSearchError
 
 
@@ -55,7 +56,7 @@ class CoachServiceTest(unittest.TestCase):
             "best_move": "e2e4",
         }
         vector_service = Mock()
-        vector_service.search.return_value = {"results": []}
+        vector_service.search.side_effect = VectorSearchError("Local embedding model unavailable")
         video_workflow = Mock()
         video_workflow.run.side_effect = VideoSearchError("youtube")
 
@@ -66,6 +67,7 @@ class CoachServiceTest(unittest.TestCase):
 
         self.assertEqual(result["evaluation"]["best_move"], "e2e4")
         self.assertGreaterEqual(len(result["warnings"]), 1)
+        self.assertTrue(any("Local embedding model unavailable" in warning for warning in result["warnings"]))
 
 
 if __name__ == "__main__":

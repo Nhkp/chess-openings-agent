@@ -14,6 +14,7 @@ from backend.app.services.history_service import (
     MongoEventLogger,
 )
 from backend.app.services.vector_service import (
+    EmbeddingService,
     MilvusVectorSearchService,
     VectorSearchError,
     VectorSearchSettings,
@@ -42,6 +43,7 @@ vector_search_service = MilvusVectorSearchService(
     uri=vector_settings.milvus_uri,
     collection_name=vector_settings.collection_name,
     limit=vector_settings.limit,
+    embedding_service=EmbeddingService(vector_settings.embedding_model),
 )
 video_settings = VideoSearchSettings.from_env()
 video_workflow = OpeningVideoWorkflow(

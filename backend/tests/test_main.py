@@ -164,7 +164,7 @@ class SeederTest(unittest.TestCase):
         from backend.scripts import load_openings
 
         with (
-            patch.object(load_openings.VectorSearchSettings, "from_env", return_value=Mock(milvus_uri="uri", collection_name="notes")),
+            patch.object(load_openings.VectorSearchSettings, "from_env", return_value=Mock(milvus_uri="uri", collection_name="notes", embedding_model="intfloat/multilingual-e5-small")),
             patch.object(load_openings, "load_opening_chunks", return_value=[]),
             patch.object(load_openings, "prepare_opening_documents", return_value=[{"id": "one"}]),
             patch.object(load_openings, "build_client", return_value=Mock()),
