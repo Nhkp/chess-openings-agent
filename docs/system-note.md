@@ -70,8 +70,13 @@ les metadonnees `id`, `opening`, `eco`, `source`, `chunk_index` et `text`.
 
 Le chargement Milvus utilise `EmbeddingService` pour vectoriser chaque chunk et
 stocker le nom du modele dans `embedding_model`. Le POC utilise par defaut
-`semantic-lite-multilingual-hash`, un embedding lexical multilingue leger et
-deterministe, afin de garder Docker rapide et les tests reproductibles.
+`intfloat/multilingual-e5-small` via Sentence Transformers sur CPU. Les documents
+(prefixe `passage: `) et les recherches (prefixe `query: `) sont encodes en 384
+dimensions avec normalisation, puis compares par cosinus dans `opening_notes_e5`.
+Le cache Hugging Face `/models` est partage entre le seed et l'API via un volume
+Docker. Le premier demarrage telecharge le modele ; aucune cle API n'est requise.
+Les tests unitaires simulent l'encodeur ; `backend.scripts.check_embeddings`
+verifie explicitement le vrai modele et la recherche multilingue.
 
 ## Benefices
 
@@ -146,7 +151,7 @@ Pour le rendu client, conserver Docker Compose comme support de demonstration et
 presenter MongoDB via l'endpoint `/api/v1/history?limit=20`. Pour une suite
 projet, prioriser :
 
-1. Remplacer `semantic-lite-multilingual-hash` par un modele transformer local, par exemple `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`, si la machine cible accepte le cout CPU/RAM.
+1. Evaluer la pertinence de E5 sur un corpus d'ouvertures plus large avant toute optimisation du modele.
 2. Ajouter une authentification utilisateur.
 3. Isoler les historiques par utilisateur.
 4. Ajouter monitoring et alerting.

@@ -42,6 +42,7 @@ documente separement dans `docs/video-analysis-system-note.md`: architecture
 MCP, pipeline OpenCV/modele vision, faisabilite, couts build/opex, risques,
 alternatives et roadmap.
 
-Point de vigilance pour la soutenance: l'embedding par defaut est volontairement
-leger pour garder le POC local rapide. La roadmap documente le remplacement par
-un modele transformer multilingue si la qualite semantique devient prioritaire.
+Le modele local `intfloat/multilingual-e5-small` genere des embeddings semantiques
+normalises de 384 dimensions sur CPU. Prevoir le telechargement initial avant la
+soutenance et executer `uv run python -m backend.scripts.check_embeddings` pour
+verifier la recherche multilingue sur le corpus.

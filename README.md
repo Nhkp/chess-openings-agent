@@ -31,8 +31,17 @@ Les variables `MONGODB_URI`, `MONGODB_DATABASE` et
 `MONGODB_EVENTS_COLLECTION` pilotent l'historique agent. Les valeurs de
 `.env.example` fonctionnent avec Docker Compose.
 
-`EMBEDDING_MODEL` identifie le modele d'embedding utilise pour indexer les
-chunks d'ouvertures dans Milvus. La valeur par defaut reste legere pour le POC.
+`EMBEDDING_MODEL=intfloat/multilingual-e5-small` est le seul modele accepte.
+Sentence Transformers l'execute localement sur CPU (PyTorch CPU), sans cle API.
+Les documents utilisent le prefixe `passage: `, les recherches `query: ` ; les
+vecteurs normalises ont 384 dimensions et sont compares par cosinus dans Milvus.
+Les entrees sont limitees par le modele a 512 tokens. Le corpus conserve son
+decoupage court existant.
+
+Le premier seed telecharge le modele depuis Hugging Face. Docker partage ensuite
+le cache `HF_HOME=/models` entre le seed et l'API dans le volume `embedding-models`.
+Les calculs suivants restent locaux ; le cache evite de retelecharger les poids.
+En execution hors Docker, Hugging Face utilise son cache utilisateur habituel.
 
 ## Demarrage Docker
 
@@ -102,6 +111,37 @@ Charger ou recharger le jeu de donnees d'ouvertures :
 docker compose up -d milvus
 uv run python -m backend.scripts.load_openings
 ```
+
+### Migration depuis les embeddings par hachage
+
+Dans un ancien `.env`, remplacer les deux valeurs :
+
+```dotenv
+EMBEDDING_MODEL=intfloat/multilingual-e5-small
+MILVUS_COLLECTION=opening_notes_e5
+```
+
+Puis reconstruire et reindexer avant de redemarrer l'API :
+
+```bash
+docker compose build api seed-openings
+docker compose up -d milvus mongodb
+docker compose run --rm seed-openings
+docker compose up -d api frontend
+```
+
+Le seed recalcule tous les vecteurs avant de recreer sa collection cible.
+L'ancienne collection `opening_notes` est conservee : ses vecteurs de 64 dimensions
+ne sont pas compatibles avec E5. Le modele n'est jamais remplace silencieusement
+par du hachage si son chargement echoue.
+
+Controle explicite avec le vrai modele (telechargement au premier passage) :
+
+```bash
+uv run python -m backend.scripts.check_embeddings
+```
+
+Les tests `unittest` courants simulent l'encodeur et ne telechargent aucun modele.
 
 Rechercher du contexte :
 
@@ -211,12 +251,13 @@ Le statut case par case de la fiche d'autoevaluation est disponible dans
 
 ## Volumes
 
-MongoDB, Milvus, MinIO et etcd utilisent des volumes Docker nommes :
+MongoDB, Milvus, MinIO, etcd et le cache du modele utilisent des volumes Docker nommes :
 
 ```bash
 docker volume ls | grep projet_13
 docker volume inspect projet_13_mongodb-data
 docker volume inspect projet_13_milvus-data
+docker volume inspect projet_13_embedding-models
 ```
 
 Pour tester la persistance, recreer les conteneurs sans supprimer les volumes :

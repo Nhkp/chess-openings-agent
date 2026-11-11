@@ -18,7 +18,17 @@ Current focus:
 - service-level tests for FEN validation, Lichess formatting, Milvus search, and YouTube formatting
 - route-level tests for FastAPI error mapping
 - seeder tests for Milvus startup retry behavior
+- E5 encoder tests with a fake model: prefixes, normalization, model reuse, invalid output, and safe seeding failures
 - MongoDB history tests for event writes, unavailable store handling, and history route formatting
+
+Run the real CPU model check separately (downloads weights on first use):
+
+```bash
+uv run python -m backend.scripts.check_embeddings
+```
+
+It verifies normalized 384-dimensional vectors and top-3 retrieval for French and
+English opening queries. The regular unit suite never downloads model weights.
 
 Next useful backend tests:
 
