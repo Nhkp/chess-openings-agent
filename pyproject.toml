@@ -11,8 +11,18 @@ dependencies = [
     "pymilvus>=3.0.0",
     "pymongo>=4.17.0",
     "python-chess>=1.999",
+    "sentence-transformers>=6.3.0",
+    "torch>=2.15.0",
     "uvicorn[standard]>=0.51.0",
 ]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
 
 [dependency-groups]
 dev = [
